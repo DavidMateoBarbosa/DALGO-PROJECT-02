@@ -240,14 +240,14 @@ def solution(cells):
 
 def main():
     global RADIUS
-    sys.stdin = open('main.in')
+    # sys.stdin = open('main.in')
     cases = int(sys.stdin.readline())
     for _ in range(cases):
         cellcount, RADIUS = map(int, sys.stdin.readline().split())
         cells = dict(map(maketuple, (sys.stdin.readline().strip() for _ in range(cellcount))))
         sys.stdout.write(' '.join(map(str, solution(cells))))
         sys.stdout.write('\n')
-    sys.stdin.close()
+    # sys.stdin.close()
 
 
 if __name__ == '__main__':
