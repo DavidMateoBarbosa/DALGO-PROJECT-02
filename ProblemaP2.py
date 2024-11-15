@@ -154,54 +154,75 @@ def solver(cells, flownet, source, sink):
         int
             Maximum flow in the modified network.
         """
+
         # Create a modified flow network without the node `id`
         modified_flow_network = defaultdict(lambda: defaultdict(int))
+
+        # Iterate through each node in the original flownet
         for source_node in flownet:
+            # Skip the node that we want to remove
             if source_node == id:
                 continue
+            # For each source node, check its neighbors
             for target_node in flownet[source_node]:
+                # Skip any edges leading to the removed node
                 if target_node == id:
                     continue
+                # Copy the existing edges and capacities to the modified network
                 modified_flow_network[source_node][target_node] = flownet[source_node][target_node]
 
-        total_flow = 0
-        while True:
-            visited_nodes = set()
-            bfs_queue = deque([source])
-            parent_map = {source: None}
+        total_flow = 0  # Initialize total flow to zero
 
-            # BFS to find an augmenting path
+        while True:
+            visited_nodes = set()  # Keep track of visited nodes during BFS
+            bfs_queue = deque([source])  # Initialize BFS with the source node
+            parent_map = {source: None}  # Map to store paths for backtracking
+
+            # Perform BFS to find an augmenting path from source to sink
             while bfs_queue:
-                current_node = bfs_queue.popleft()
+                current_node = bfs_queue.popleft()  # Get the current node from the queue
+
                 for neighbor_node in modified_flow_network[current_node]:
+                    # Check if neighbor hasn't been visited and has available capacity
                     if neighbor_node not in visited_nodes and modified_flow_network[current_node][neighbor_node] > 0:
-                        visited_nodes.add(neighbor_node)
-                        parent_map[neighbor_node] = current_node
-                        bfs_queue.append(neighbor_node)
+                        visited_nodes.add(neighbor_node)  # Mark neighbor as visited
+                        parent_map[neighbor_node] = current_node  # Record path
+                        bfs_queue.append(neighbor_node)  # Add neighbor to queue
+
+                        # If we reach the sink, break out of the loop
                         if neighbor_node == sink:
                             break
 
-            # If we found an augmenting path, calculate the bottleneck capacity
+            # If we found an augmenting path (i.e., we reached sink)
             if sink in parent_map:
-                bottleneck_capacity = float('inf')
+                bottleneck_capacity = float('inf')  # Start with infinite capacity
                 node = sink
+
+                # Backtrack to find the bottleneck capacity along the path found
                 while node != source:
                     bottleneck_capacity = min(bottleneck_capacity, modified_flow_network[parent_map[node]][node])
-                    node = parent_map[node]
-                total_flow += bottleneck_capacity
+                    node = parent_map[node]  # Move to previous node
+
+                total_flow += bottleneck_capacity  # Add bottleneck capacity to total flow
 
                 # Update residual capacities along the augmenting path
-                node = sink
+                node = sink  # Start from sink again for updating capacities
+
                 while node != source:
-                    previous_node = parent_map[node]
+                    previous_node = parent_map[node]  # Get previous node in path
+
+                    # Decrease capacity of forward edge by bottleneck capacity
                     modified_flow_network[previous_node][node] -= bottleneck_capacity
+
+                    # Increase capacity of reverse edge by bottleneck capacity (for residual graph)
                     modified_flow_network[node][previous_node] += bottleneck_capacity
-                    node = previous_node
+
+                    node = previous_node  # Move to previous node in path
+
             else:
-                break
+                break  # Exit loop if no more augmenting paths are found
 
-        return total_flow
-
+        return total_flow  # Return the maximum flow found in the modified network
     # Calculate flow reductions for each calculator node
     reductions = {id: reduce(id) for id in cells if cells[id]['type'] is CALCULATOR}
     id = min(reductions, key=reductions.get)  # Find node with maximum impact
@@ -219,15 +240,17 @@ def solution(cells):
 
 def main():
     global RADIUS
-    # sys.stdin = open('main.in')
+    sys.stdin = open('main.in')
     cases = int(sys.stdin.readline())
     for _ in range(cases):
         cellcount, RADIUS = map(int, sys.stdin.readline().split())
         cells = dict(map(maketuple, (sys.stdin.readline().strip() for _ in range(cellcount))))
         sys.stdout.write(' '.join(map(str, solution(cells))))
         sys.stdout.write('\n')
-    # sys.stdin.close()
+    sys.stdin.close()
 
 
 if __name__ == '__main__':
     main()
+
+# NOTE: The last test case from the doc shows 3 but the node 2 has the same importance
